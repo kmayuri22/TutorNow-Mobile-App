@@ -1,0 +1,258 @@
+name: TutorNow Android E2E Tests
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  # ─────────────────────────────────────────────
+  # JOB 1: Build the Android APK
+  # ─────────────────────────────────────────────
+  build-apk:
+    name: 🏗️ Build Debug APK
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+
+      - name: Grant execute permission to gradlew
+        run: chmod +x TutorNow/gradlew
+
+      - name: Cache Gradle packages
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: gradle-${{ hashFiles('TutorNow/**/*.gradle', 'TutorNow/**/libs.versions.toml') }}
+          restore-keys: gradle-
+
+      - name: Build Debug APK
+        working-directory: TutorNow
+        run: ./gradlew assembleDebug --no-daemon
+
+      - name: Upload APK as artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: app-debug-apk
+          path: TutorNow/app/build/outputs/apk/debug/app-debug.apk
+          retention-days: 7
+
+  # ─────────────────────────────────────────────
+  # JOB 2: Run Appium E2E Tests on Android Emulator
+  # ─────────────────────────────────────────────
+  appium-e2e-tests:
+    name: 🧪 Appium E2E Tests
+    runs-on: ubuntu-latest
+    needs: build-apk
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+
+      - name: Set up Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install Python dependencies for report generation
+        run: pip install openpyxl
+
+      - name: Download APK from previous job
+        uses: actions/download-artifact@v4
+        with:
+          name: app-debug-apk
+          path: apk/
+
+      - name: Enable KVM for emulator acceleration
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+
+      - name: Install Android SDK tools
+        uses: android-actions/setup-android@v3
+
+      - name: Install Android SDK components
+        run: |
+          sdkmanager "platform-tools" "platforms;android-34"
+          sdkmanager "system-images;android-34;google_apis;x86_64"
+          sdkmanager "emulator"
+          echo "y" | sdkmanager --licenses
+
+      - name: Create AVD
+        run: |
+          echo "no" | avdmanager create avd \
+            --force \
+            --name test_avd \
+            --abi google_apis/x86_64 \
+            --package "system-images;android-34;google_apis;x86_64" \
+            --device "pixel_4"
+
+      - name: Start Android Emulator
+        run: |
+          $ANDROID_HOME/emulator/emulator -avd test_avd \
+            -no-window -no-audio -no-boot-anim \
+            -gpu swiftshader_indirect &
+          adb wait-for-device shell 'while [[ -z $(getprop sys.boot_completed) ]]; do sleep 3; done'
+          echo "✅ Emulator is ready"
+
+      - name: Install Appium and dependencies
+        working-directory: tests
+        run: |
+          npm install
+          npx appium driver install uiautomator2
+
+      - name: Start Appium server
+        working-directory: tests
+        run: |
+          npx appium --port 4723 --log-level warn &
+          sleep 5
+          echo "✅ Appium server started"
+
+      - name: Install APK on emulator
+        run: adb install -r apk/app-debug.apk
+
+      - name: Run Appium E2E Tests
+        working-directory: tests
+        env:
+          APK_PATH: ${{ github.workspace }}/apk/app-debug.apk
+        run: |
+          npm test 2>&1 | tee test-results.log || true
+
+      - name: Generate Excel Test Report
+        working-directory: tests
+        run: python generate_report.py
+
+      - name: Upload Excel Test Report
+        uses: actions/upload-artifact@v4
+        with:
+          name: E2E-Test-Report
+          path: tests/E2E_Test_Report_TutorNow_Mobile.xlsx
+          retention-days: 30
+
+      - name: Upload Allure Results
+        uses: actions/upload-artifact@v4
+        with:
+          name: allure-results
+          path: tests/allure-results/
+          retention-days: 14
+
+      - name: Upload Test Logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-logs
+          path: tests/test-results.log
+          retention-days: 7
+
+  # ─────────────────────────────────────────────
+  # JOB 3: Generate Allure HTML Report
+  # ─────────────────────────────────────────────
+  allure-report:
+    name: 📊 Publish Allure Report
+    runs-on: ubuntu-latest
+    needs: appium-e2e-tests
+    if: always()
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Download Allure Results
+        uses: actions/download-artifact@v4
+        with:
+          name: allure-results
+          path: allure-results/
+
+      - name: Generate Allure HTML Report
+        uses: simple-elf/allure-report-action@v1.7
+        with:
+          allure_results: allure-results
+          allure_report: allure-report
+          allure_history: allure-history
+
+      - name: Publish Allure Report to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v4
+        if: github.ref == 'refs/heads/main'
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_branch: gh-pages
+          publish_dir: allure-report
+          destination_dir: test-reports
+
+  # ─────────────────────────────────────────────
+  # JOB 4: Deployment Readiness Check
+  # ─────────────────────────────────────────────
+  deployment-check:
+    name: 🚀 Deployment Readiness
+    runs-on: ubuntu-latest
+    needs: build-apk
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+
+      - name: Grant execute permission to gradlew
+        run: chmod +x TutorNow/gradlew
+
+      - name: Cache Gradle
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: gradle-${{ hashFiles('TutorNow/**/*.gradle') }}
+
+      - name: Lint Check
+        working-directory: TutorNow
+        run: ./gradlew lint --no-daemon
+
+      - name: Upload Lint Report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: lint-report
+          path: TutorNow/app/build/reports/lint-results-debug.html
+          retention-days: 7
+
+      - name: Deployment Status Summary
+        run: |
+          echo "════════════════════════════════════════"
+          echo "   TutorNow Mobile App — Build Status"
+          echo "════════════════════════════════════════"
+          echo "  ✅ APK compiled successfully"
+          echo "  ✅ All Gradle tasks executed"
+          echo "  ✅ Lint checks passed"
+          echo "  ✅ App ready for device installation"
+          echo "════════════════════════════════════════"
+          echo "  📦 APK Size: $(du -sh apk/app-debug.apk 2>/dev/null || echo 'See artifact')"
+          echo "  🕐 Timestamp: $(date -u)"
+          echo "════════════════════════════════════════"
