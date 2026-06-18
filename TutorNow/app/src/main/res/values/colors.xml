@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Primary Brand Colors -->
+    <color name="purple_primary">#6C63FF</color>
+    <color name="purple_dark">#4A43CC</color>
+    <color name="purple_light">#9C95FF</color>
+    <color name="purple_surface">#EEF0FF</color>
+    <color name="teal_accent">#00BFA5</color>
+    <color name="teal_light">#B2DFDB</color>
+    <color name="orange_accent">#FF6B35</color>
+    <color name="gold_accent">#FFB300</color>
+
+    <!-- Surface Colors -->
+    <color name="background">#0F0E1A</color>
+    <color name="surface">#1A1929</color>
+    <color name="card_background">#221F35</color>
+    <color name="surface_variant">#2C2845</color>
+
+    <!-- Text Colors -->
+    <color name="on_surface">#F0EEFF</color>
+    <color name="text_secondary">#B0A8D9</color>
+    <color name="text_hint">#6B6494</color>
+    <color name="white">#FFFFFF</color>
+    <color name="black">#000000</color>
+
+    <!-- Status Colors -->
+    <color name="status_pending">#FFB300</color>
+    <color name="status_confirmed">#00BFA5</color>
+    <color name="status_rejected">#FF5252</color>
+    <color name="status_completed">#6C63FF</color>
+    <color name="error_color">#FF5252</color>
+    <color name="success_color">#00C853</color>
+
+    <!-- Component Colors -->
+    <color name="bottom_nav_color">@color/purple_primary</color>
+    <color name="chip_background">#2C2845</color>
+    <color name="chip_text">#F0EEFF</color>
+    <color name="divider_color">#2C2845</color>
+    <color name="shimmer_base">#221F35</color>
+    <color name="shimmer_highlight">#2C2845</color>
+
+    <!-- Gradient start/end -->
+    <color name="gradient_start">#6C63FF</color>
+    <color name="gradient_end">#00BFA5</color>
+    <color name="transparent">#00000000</color>
+</resources>

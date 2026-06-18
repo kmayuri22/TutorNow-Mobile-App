@@ -1,0 +1,28 @@
+# Gradle files
+.gradle/
+build/
+TutorNow/.gradle/
+TutorNow/build/
+TutorNow/app/build/
+
+# IntelliJ IDEA/Android Studio files
+.idea/
+TutorNow/.idea/
+*.iml
+TutorNow/*.iml
+TutorNow/app/*.iml
+
+# Local configuration files
+local.properties
+TutorNow/local.properties
+
+# Log files
+*.log
+
+# OS generated files
+.DS_Store
+Thumbs.db
+
+# Large Archives
+*.zip
+TutorNow/commandlinetools.zip

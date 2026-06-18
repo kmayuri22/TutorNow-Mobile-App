@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<navigation xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/nav_student"
+    app:startDestination="@id/homeFragment">
+
+    <fragment
+        android:id="@+id/homeFragment"
+        android:name="com.tutornow.app.ui.student.HomeFragment"
+        android:label="Home"
+        tools:layout="@layout/fragment_home">
+    </fragment>
+
+    <fragment
+        android:id="@+id/searchFragment"
+        android:name="com.tutornow.app.ui.student.SearchFragment"
+        android:label="Search"
+        tools:layout="@layout/fragment_search">
+    </fragment>
+
+    <fragment
+        android:id="@+id/bookingsFragment"
+        android:name="com.tutornow.app.ui.student.BookingsFragment"
+        android:label="My Bookings"
+        tools:layout="@layout/fragment_bookings">
+    </fragment>
+
+    <fragment
+        android:id="@+id/profileFragment"
+        android:name="com.tutornow.app.ui.profile.ProfileFragment"
+        android:label="Profile"
+        tools:layout="@layout/fragment_profile">
+    </fragment>
+
+</navigation>

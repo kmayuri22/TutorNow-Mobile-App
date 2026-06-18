@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<navigation xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/nav_tutor"
+    app:startDestination="@id/tutorDashboardFragment">
+
+    <fragment
+        android:id="@+id/tutorDashboardFragment"
+        android:name="com.tutornow.app.ui.tutor.TutorDashboardFragment"
+        android:label="Dashboard"
+        tools:layout="@layout/fragment_tutor_dashboard">
+    </fragment>
+
+    <fragment
+        android:id="@+id/sessionsFragment"
+        android:name="com.tutornow.app.ui.tutor.SessionsFragment"
+        android:label="Sessions"
+        tools:layout="@layout/fragment_sessions">
+    </fragment>
+
+    <fragment
+        android:id="@+id/availabilityFragment"
+        android:name="com.tutornow.app.ui.tutor.AvailabilityFragment"
+        android:label="Availability"
+        tools:layout="@layout/fragment_availability">
+    </fragment>
+
+    <fragment
+        android:id="@+id/tutorProfileFragment"
+        android:name="com.tutornow.app.ui.profile.ProfileFragment"
+        android:label="Profile"
+        tools:layout="@layout/fragment_profile">
+    </fragment>
+
+</navigation>
